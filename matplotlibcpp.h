@@ -312,9 +312,9 @@ template <> struct select_npy_type<uint64_t> { const static NPY_TYPES type = NPY
 
 // Sanity checks; comment them out or change the numpy type below if you're compiling on
 // a platform where they don't apply
-static_assert(sizeof(long long) == 8);
+// static_assert(sizeof(long long) == 8);
 template <> struct select_npy_type<long long> { const static NPY_TYPES type = NPY_INT64; };
-static_assert(sizeof(unsigned long long) == 8);
+// static_assert(sizeof(unsigned long long) == 8);
 template <> struct select_npy_type<unsigned long long> { const static NPY_TYPES type = NPY_UINT64; };
 // TODO: add int, long, etc.
 
@@ -670,7 +670,13 @@ bool fill(const std::vector<Numeric>& x, const std::vector<Numeric>& y, const st
     // construct keyword args
     PyObject* kwargs = PyDict_New();
     for (auto it = keywords.begin(); it != keywords.end(); ++it) {
-        PyDict_SetItemString(kwargs, it->first.c_str(), PyUnicode_FromString(it->second.c_str()));
+      try {
+        double value = std::stod(it->second);
+        PyDict_SetItemString(kwargs, it->first.c_str(), PyFloat_FromDouble(value));
+      } catch (std::exception &) {
+        PyDict_SetItemString(kwargs, it->first.c_str(),
+                             PyUnicode_FromString(it->second.c_str()));
+      }
     }
 
     PyObject* res = PyObject_Call(detail::_interpreter::get().s_python_function_fill, args, kwargs);
